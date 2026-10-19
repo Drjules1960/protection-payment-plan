@@ -45,6 +45,16 @@ Sample logins: `contractor@demo.test`, `homeowner@demo.test`, `staff@demo.test`,
 Without a Stripe key the app runs in **practice mode**: payments are simulated and
 a yellow bar says so on every page.
 
+## Putting it online (Render)
+
+1. Sign up at https://render.com with your GitHub account.
+2. Click **New**, then **Blueprint**, and pick this repository. Render reads `render.yaml`.
+3. Fill in `STAFF_EMAIL` and `STAFF_PASSWORD` (your own staff login). Leave the Stripe fields empty for now.
+4. Click **Apply**. In a few minutes Render shows the app's web address.
+
+It starts in practice mode with the sample logins above. Set `SEED_SAMPLE_DATA` to
+`false` in Render's Environment page before real customers use it.
+
 ## Turning on Stripe test mode
 
 1. Create a free Stripe account and turn on **Connect** in the Dashboard.

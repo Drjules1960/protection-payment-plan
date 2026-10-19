@@ -9,9 +9,13 @@ const { hashPassword } = require('./auth');
 try { process.loadEnvFile(); } catch { /* no .env file; use the real environment */ }
 
 const port = Number(process.env.PORT || 3000);
-const baseUrl = (process.env.BASE_URL || `http://localhost:${port}`).replace(/\/$/, '');
+// Render sets RENDER_EXTERNAL_URL to the app's public web address.
+const baseUrl = (process.env.BASE_URL || process.env.RENDER_EXTERNAL_URL || `http://localhost:${port}`).replace(/\/$/, '');
 const dataDir = process.env.DATA_DIR || path.join(__dirname, '..', 'data');
 require('node:fs').mkdirSync(dataDir, { recursive: true });
+
+// Adds the sample logins and job, for trying the app out (see README).
+if (process.env.SEED_SAMPLE_DATA === 'true') require('../scripts/seed');
 
 const db = openDb(path.join(dataDir, 'app.db'));
 const payments = paymentsFromEnv();

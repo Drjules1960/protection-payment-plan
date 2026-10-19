@@ -1,0 +1,34 @@
+# One-click hosting on Render (https://render.com): New > Blueprint > pick this repository.
+services:
+  - type: web
+    name: protection-payment-plan
+    runtime: node
+    plan: starter # a paid plan is needed for the disk that keeps the database and photos
+    buildCommand: npm ci --omit=dev
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 22.13.0
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATA_DIR
+        value: /var/data
+      # Adds sample logins (password: demo-password) so you can try every role.
+      # Set to false before real customers use the app.
+      - key: SEED_SAMPLE_DATA
+        value: "true"
+      # Your own staff login. Render asks for these when you create the app.
+      - key: STAFF_EMAIL
+        sync: false
+      - key: STAFF_PASSWORD
+        sync: false
+      # Add these later to switch from practice mode to Stripe test mode.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+    disk:
+      name: data
+      mountPath: /var/data
+      sizeGB: 1

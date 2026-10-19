@@ -1,0 +1,6 @@
+<div class="sumtable">
+  <div><span>Project funds (paid to the contractor step by step)</span><span class="money"><%= usd(totals.total) %></span></div>
+  <div><span>Permit fee fund (leftover comes back to you)</span><span class="money"><%= usd(job.permit_budget_cents) %></span></div>
+  <div><span>Service fee (1.25%)</span><span class="money"><%= usd(totals.homeownerFee) %></span></div>
+  <div class="total"><span>Total deposit</span><span class="money"><%= usd(totals.total + job.permit_budget_cents + totals.homeownerFee) %></span></div>
+</div>

@@ -1,0 +1,39 @@
+<%- include('partials/head', { title: 'New job' }) %>
+<% const f = form || {}; const steps = (f.steps && f.steps.length) ? f.steps : [{ name: '', amount: '', proof: 'inspector' }]; %>
+<div class="pagehead"><div><span class="label">Offer the plan</span><h1>New job</h1></div></div>
+<% if (typeof error !== 'undefined') { %><div class="banner bad"><div><%= error %></div></div><% } %>
+<form class="stack" method="post" action="/jobs">
+  <div class="card stack"><h2>The job</h2>
+    <div class="grid2">
+      <label class="field">What's the job?<input name="title" value="<%= f.title || '' %>" placeholder="Kitchen remodel" required></label>
+      <label class="field">Job address<input name="address" value="<%= f.address || '' %>" placeholder="2318 Selwyn Ave, Charlotte, NC 28207" required></label>
+      <label class="field">Homeowner's name<input name="homeowner_name" value="<%= f.homeowner_name || '' %>" required></label>
+      <label class="field">Homeowner's email<input type="email" name="homeowner_email" value="<%= f.homeowner_email || '' %>" required></label>
+    </div></div>
+  <div class="card stack"><div class="row between"><h2>Payment steps</h2>
+    <div class="row small"><span class="muted">Start from:</span>
+      <button type="button" data-template="kitchen">Kitchen</button><button type="button" data-template="bath">Bathroom</button><button type="button" data-template="roof">Roof</button></div></div>
+    <p class="small muted">Each step is paid when it passes its check. The steps add up to the job price.</p>
+    <div class="stack" id="steps">
+      <% steps.forEach((s) => { %>
+      <div class="steprow">
+        <input class="name" name="step_name" value="<%= s.name %>" placeholder="Step name" aria-label="Step name">
+        <input name="step_amount" value="<%= s.amount %>" placeholder="$ amount" inputmode="decimal" aria-label="Amount">
+        <select name="step_proof" aria-label="Who checks it">
+          <option value="inspector" <%= s.proof !== 'permit' ? 'selected' : '' %>>Independent inspector</option>
+          <option value="permit" <%= s.proof === 'permit' ? 'selected' : '' %>>Permit office inspection</option>
+        </select>
+        <button type="button" class="remove" aria-label="Remove step">✕</button>
+      </div>
+      <% }) %>
+    </div>
+    <div class="row between"><button type="button" id="add-step">Add a step</button><span>Job price: <b class="money" id="job-total">$0.00</b></span></div>
+  </div>
+  <div class="card stack"><h2>Permit fees</h2>
+    <p class="small muted">The homeowner pays all permit fees. You pull the permits and record each one in the app, and the fee is paid back to you from this fund. Anything left over goes back to the homeowner.</p>
+    <label class="field" style="max-width:16rem">Estimated permit fees<input name="permit_budget" value="<%= f.permit_budget || '' %>" placeholder="$0" inputmode="decimal"></label>
+  </div>
+  <div><button class="primary">Create the offer</button></div>
+</form>
+<script src="/job-new.js"></script>
+<%- include('partials/foot') %>

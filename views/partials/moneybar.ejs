@@ -1,0 +1,7 @@
+<% const tt = t.total || 1; %>
+<div class="bar" aria-hidden="true"><span class="paid" style="width:<%= t.paid / tt * 100 %>%"></span><span class="held" style="width:<%= t.held / tt * 100 %>%"></span></div>
+<div class="legend">
+  <span><i style="background:var(--ok)"></i>Paid <%= usd(t.paid) %></span>
+  <span><i style="background:var(--brass)"></i>Secured <%= usd(t.held) %></span>
+  <% if (t.refunded) { %><span>Refunded <%= usd(t.refunded) %></span><% } %>
+</div>

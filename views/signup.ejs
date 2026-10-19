@@ -1,0 +1,13 @@
+<%- include('partials/head', { narrow: true, title: 'Contractor sign-up' }) %>
+<form class="card stack" method="post" action="/signup">
+  <h1>Contractor sign-up</h1>
+  <% if (typeof error !== 'undefined') { %><div class="banner bad"><div><%= error %></div></div><% } %>
+  <label class="field">Your name<input name="name" value="<%= form.name || '' %>" required></label>
+  <label class="field">Company name<input name="company" value="<%= form.company || '' %>" required></label>
+  <label class="field">NC general contractor license number<input name="license" value="<%= form.license || '' %>" required></label>
+  <label class="field">Email<input type="email" name="email" value="<%= form.email || '' %>" required autocomplete="email"></label>
+  <label class="field">Password (8 or more characters)<input type="password" name="password" minlength="8" required autocomplete="new-password"></label>
+  <button class="primary">Create account</button>
+  <p class="small muted">Our staff check your license with the NC Licensing Board for General Contractors.</p>
+</form>
+<%- include('partials/foot') %>

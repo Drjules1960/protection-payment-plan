@@ -1,0 +1,4 @@
+<%
+const JOB = { invited: ['Invite sent', 'warn'], accepted: ['Needs deposit', 'warn'], funded: ['In progress', 'info'], disputed: ['On hold: problem reported', 'bad'], complete: ['Complete', 'ok'], closed: ['Closed', 'muted'] };
+const s = JOB[status];
+%><span class="pill <%= s[1] %>"><%= s[0] %></span>

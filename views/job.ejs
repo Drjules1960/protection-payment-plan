@@ -1,0 +1,177 @@
+<%- include('partials/head', { title: job.title }) %>
+<%
+const role = user.role;
+const cName = contractor.company || contractor.name;
+const live = ['funded', 'disputed'].includes(job.status);
+const MS = { upcoming: ['Not started', 'muted'], submitted: ['Waiting for check', 'info'], inspection: ['Inspection scheduled', 'info'], changes: ["Didn't pass yet", 'warn'], approved: ['Passed, payment sending', 'ok'], paid: ['Passed and paid', 'ok'], refunded: ['Refunded', 'muted'] };
+const today = new Date(Date.now() + 2 * 864e5).toISOString().slice(0, 10);
+%>
+<div class="pagehead">
+  <div><span class="label">Job #<%= job.id %></span><h1><%= job.title %></h1><span class="muted"><%= job.address %></span></div>
+  <div class="stack" style="justify-items:end;gap:.3rem"><%- include('partials/status', { status: job.status }) %>
+    <span class="small muted">Contractor: <%= cName %> · Homeowner: <%= homeowner ? homeowner.name : job.homeowner_name %></span></div>
+</div>
+
+<% if (role === 'contractor' && job.status === 'invited') { %>
+<div class="card stack"><h2>Send this invite link to <%= job.homeowner_name %></h2>
+  <p class="small muted">Text or email it to <%= job.homeowner_email %>. They'll create an account, review the steps and deposit the money.</p>
+  <div class="copy"><input readonly value="<%= inviteUrl %>" id="invite-url" aria-label="Invite link"><button type="button" onclick="navigator.clipboard.writeText(document.getElementById('invite-url').value);this.textContent='Copied'">Copy</button></div>
+</div>
+<% } %>
+
+<% if (dispute) { %>
+<div class="banner bad"><div>
+  <b><%= dispute.milestone_id ? 'A problem was reported on one step. Its money is on hold.' : 'A problem was reported on this job. All payments are on hold.' %></b>
+  <span class="small">"<%= dispute.reason %>"</span>
+  <% if (role !== 'staff') { %><span class="small">An independent inspector will look at the work and report to both sides. If you still disagree, it goes to mediation.</span><% } %>
+</div>
+<% if (role === 'staff') { %>
+  <div class="row">
+    <% if (dispute.milestone_id) { %><form method="post" action="/disputes/<%= dispute.id %>/resolve"><input type="hidden" name="outcome" value="pay"><button class="primary">Inspector sided with contractor: pay the step</button></form><% } %>
+    <form method="post" action="/disputes/<%= dispute.id %>/resolve"><input type="hidden" name="outcome" value="resume"><button>Settled: continue the job</button></form>
+    <form method="post" action="/disputes/<%= dispute.id %>/resolve" onsubmit="return confirm('Refund all secured money to the homeowner and close the job?')"><input type="hidden" name="outcome" value="refund"><button class="danger">Sided with homeowner: refund <%= usd(totals.held + totals.permitLeft) %></button></form>
+  </div>
+<% } %>
+</div>
+<% } %>
+
+<% if (role === 'homeowner' && job.status === 'invited') { %>
+<div class="card stack"><h2>Review the offer</h2>
+  <p><%= cName %> (NC license <%= contractor.license_no %>) set up the payment steps below. Each step is paid only after an independent inspector or the permit office confirms the work. You don't approve payments yourself, but you can report a problem at any time.</p>
+  <%- include('partials/deposit-summary', { job, totals }) %>
+  <form method="post" action="/jobs/<%= job.id %>/accept"><button class="primary">Accept the offer</button></form>
+</div>
+<% } %>
+<% if (role === 'homeowner' && job.status === 'accepted') { %>
+<div class="card stack"><h2>Deposit the project funds</h2>
+  <p>Your money goes to Stripe, a licensed payment company, and is held there. It's paid to <%= cName %> one step at a time as each step passes its check.</p>
+  <%- include('partials/deposit-summary', { job, totals }) %>
+  <form method="post" action="/jobs/<%= job.id %>/deposit"><button class="primary">Continue to secure payment</button></form>
+  <p class="small muted">You can pay by bank transfer, debit card or Cash App Pay. Bank transfers take a few business days to clear.</p>
+</div>
+<% } %>
+<% if (role === 'contractor' && ['invited', 'accepted'].includes(job.status)) { %>
+<div class="banner warn"><div><b>Don't start work yet.</b><span class="small">This job isn't funded. Once the homeowner deposits, the full amount is secured for you.</span></div></div>
+<% } %>
+
+<% if (live || ['complete', 'closed'].includes(job.status)) { %>
+<div class="stats">
+  <div class="stat"><span class="label">Job price</span><span class="money"><%= usd(totals.total) %></span></div>
+  <div class="stat held"><span class="label">Secured</span><span class="money"><%= usd(totals.held) %></span></div>
+  <div class="stat"><span class="label">Paid to contractor</span><span class="money"><%= usd(totals.paid) %></span><span class="small muted">Before the 1.25% fee</span></div>
+  <div class="stat"><span class="label">Permit fund left</span><span class="money"><%= usd(totals.permitLeft) %></span></div>
+</div>
+<% } %>
+
+<section class="stack"><h2>Payment steps</h2>
+<div class="milestones">
+<% milestones.forEach((m, i) => { const st = MS[m.status]; %>
+  <div class="ms <%= m.status === 'paid' ? 'paid' : '' %>" id="step-<%= m.id %>">
+    <div class="ms-head">
+      <span class="ms-num"><%= m.status === 'paid' ? '✓' : i + 1 %></span>
+      <div class="stack" style="gap:.2rem"><h3><%= m.name %></h3>
+        <div class="row small"><span class="pill <%= st[1] %>"><%= st[0] %></span><span class="tag"><%= m.proof === 'permit' ? 'Permit office' : 'Independent inspector' %></span><% if (m.frozen) { %><span class="pill bad">On hold</span><% } %></div></div>
+      <div class="ms-amt"><span class="money"><%= usd(m.amount_cents) %></span><% if (role === 'contractor') { %><span class="small muted">You get <%= usd(m.amount_cents - feeOf(m.amount_cents)) %></span><% } %></div>
+    </div>
+    <div class="ms-body">
+      <% if (m.photos.length) { %><div class="photos"><% m.photos.forEach((p, k) => { %><a href="/photos/<%= p.id %>" target="_blank"><img src="/photos/<%= p.id %>" alt="Progress photo <%= k + 1 %> for <%= m.name %>"></a><% }) %></div><% } %>
+      <% if (m.note) { %><div class="note"><b>Contractor's note:</b> <%= m.note %><% if (m.permit_no) { %> <span class="tag">Permit <%= m.permit_no %></span><% } %></div><% } %>
+      <% if (m.status === 'changes' && m.result_note) { %><div class="note warn"><b>Didn't pass:</b> <%= m.result_note %></div><% } %>
+      <% if (m.status === 'inspection') { %><div class="note info"><b>Independent inspection on <%= m.inspection_date %>:</b> <%= m.inspector.name %><%= m.inspector.company ? ', ' + m.inspector.company : '' %>. They work for neither side and are paid by the Protection Plan.</div><% } %>
+      <% if (m.status === 'submitted' && m.proof === 'permit') { %><div class="note info"><b>Waiting on the permit office.</b> Our staff confirm the inspection result on permit <%= m.permit_no %> with the county or city.</div><% } %>
+      <% if (m.status === 'submitted' && m.proof === 'inspector') { %><div class="note info"><b>Waiting for an inspector to be assigned.</b></div><% } %>
+      <% if (['approved', 'paid'].includes(m.status)) { %><div class="note ok"><b>Verified by <%= m.verified_by %>.</b> <%= m.result_note || '' %></div><% } %>
+      <% if (m.status === 'paid') { %><p class="small muted">Paid <%= m.paid_at %> UTC by Stripe transfer · <span class="money"><%= m.transfer_id %></span></p><% } %>
+      <% if (m.status === 'approved') { %><p class="small muted">The payment is sent as soon as <%= cName %> finishes payout setup.</p><% } %>
+
+      <% if (role === 'contractor' && live && ['upcoming', 'changes'].includes(m.status)) { %>
+      <details class="sub"><summary class="btn primary"><%= m.status === 'changes' ? 'Fix and resubmit' : 'Request inspection and payment' %></summary>
+        <form class="subform" method="post" action="/milestones/<%= m.id %>/proof" enctype="multipart/form-data">
+          <label class="field">Progress photos<input type="file" name="photos" accept="image/*" multiple required></label>
+          <% if (m.proof === 'permit') { %><label class="field">Permit number<input name="permit_no" value="<%= m.permit_no || '' %>" placeholder="e.g. BLD-2026-09114" required></label><% } %>
+          <label class="field">Note for the inspector<textarea name="note" placeholder="What's finished, anything they should know"></textarea></label>
+          <div><button class="primary">Submit and request <%= usd(m.amount_cents) %></button></div>
+          <p class="small muted"><%= m.proof === 'permit' ? 'Call in the inspection with the permit office as usual. We confirm the pass with them and you are paid the same day.' : 'We send an independent inspector. You are paid the moment it passes.' %></p>
+        </form></details>
+      <% } %>
+      <% if (role === 'contractor' && ['submitted', 'inspection'].includes(m.status)) { %><p class="small muted">Submitted <%= m.submitted_at %> UTC. You're paid as soon as it passes.</p><% } %>
+
+      <% if (role === 'homeowner' && ['submitted', 'inspection'].includes(m.status)) { %><p class="small muted">You don't need to approve anything. <%= m.proof === 'permit' ? 'The permit office' : 'The independent inspector' %> decides whether this step is done. If you see a problem, report it below before the check.</p><% } %>
+
+      <% if (role === 'staff' && ['submitted', 'inspection'].includes(m.status) && m.proof === 'inspector') { %>
+      <details class="sub"><summary class="btn primary"><%= m.status === 'inspection' ? 'Change inspector or date' : 'Assign an inspector' %></summary>
+        <form class="subform" method="post" action="/milestones/<%= m.id %>/assign">
+          <% if (!inspectors.length) { %><p class="small">No inspectors yet. <a href="/staff/team">Add one on the Team page.</a></p><% } else { %>
+          <label class="field">Independent inspector<select name="inspector_id"><% inspectors.forEach((ins) => { %><option value="<%= ins.id %>"><%= ins.name %><%= ins.company ? ', ' + ins.company : '' %></option><% }) %></select></label>
+          <label class="field">Visit date<input type="date" name="date" value="<%= m.inspection_date || today %>" required></label>
+          <div><button class="primary">Assign</button></div><% } %>
+        </form></details>
+      <% } %>
+      <% if (role === 'staff' && m.status === 'submitted' && m.proof === 'permit') { %>
+      <details class="sub"><summary class="btn primary">Record the permit office result</summary>
+        <form class="subform" method="post" action="/milestones/<%= m.id %>/check">
+          <p class="small">Look up permit <b><%= m.permit_no %></b> with the county or city permit office and record what it shows.</p>
+          <label class="field">What the permit record shows<textarea name="note" required>Permit <%= m.permit_no %>: inspection passed.</textarea></label>
+          <div class="row"><button class="primary" name="result" value="pass" <%= m.frozen ? 'disabled' : '' %>>Passed: pay <%= usd(m.amount_cents) %></button><button class="danger" name="result" value="fail">Didn't pass</button></div>
+        </form></details>
+      <% } %>
+      <% if (role === 'staff' && m.status === 'approved') { %>
+        <form method="post" action="/milestones/<%= m.id %>/retry-payout"><button>Retry the payment</button></form>
+      <% } %>
+      <% if (role === 'inspector' && m.status === 'inspection' && m.inspector_id === user.id) { %>
+        <form class="subform" method="post" action="/milestones/<%= m.id %>/check">
+          <label class="field">What you checked on site<textarea name="note" required placeholder="What you saw, and anything that needs fixing"></textarea></label>
+          <div class="row"><button class="primary" name="result" value="pass" <%= m.frozen ? 'disabled' : '' %>>Passed: pay <%= usd(m.amount_cents) %></button><button class="danger" name="result" value="fail">Didn't pass</button></div>
+          <% if (m.frozen) { %><p class="small muted">A problem was reported on this step, so it can't be paid until our staff resolve it.</p><% } %>
+        </form>
+      <% } %>
+    </div>
+  </div>
+<% }) %>
+</div></section>
+
+<% if (live || ['complete', 'closed'].includes(job.status)) { %>
+<section class="stack"><h2>Permits</h2>
+  <p class="small muted">The homeowner pays all permit fees. The contractor pulls the permits and is paid back from the homeowner's permit fund. Leftover money goes back to the homeowner at the end.</p>
+  <div class="sumtable card">
+    <div><span>Permit fund deposited</span><span class="money"><%= usd(totals.permitFunded) %></span></div>
+    <div><span>Paid back to the contractor</span><span class="money"><%= usd(totals.permitReimbursed) %></span></div>
+    <div class="total"><span>Left in the fund</span><span class="money"><%= usd(totals.permitLeft) %></span></div>
+  </div>
+  <% if (permits.length) { %><div class="card tablewrap" style="padding:.4rem .6rem"><table><thead><tr><th>Permit</th><th>Covers</th><th class="num">Fee</th><th>Status</th></tr></thead><tbody>
+    <% permits.forEach((p) => { %><tr><td class="money small"><%= p.permit_no %></td><td><%= p.description %></td><td class="num money"><%= usd(p.fee_cents) %></td><td><%= p.status === 'reimbursed' ? 'Paid back' : 'Waiting for permit money' %></td></tr><% }) %>
+  </tbody></table></div><% } %>
+  <% if (role === 'homeowner' && live && totals.permitOwed > totals.permitLeft) { %>
+    <div class="banner warn"><div><b>Permit fees came to more than the fund.</b><span class="small">Add <%= usd(totals.permitOwed - totals.permitLeft) %> so the contractor can be paid back for the permits.</span></div>
+      <form method="post" action="/jobs/<%= job.id %>/permit-topup"><button class="primary">Add <%= usd(totals.permitOwed - totals.permitLeft) %></button></form></div>
+  <% } %>
+  <% if (role === 'contractor' && live) { %>
+  <details class="sub"><summary class="btn">Record a permit you pulled</summary>
+    <form class="subform" method="post" action="/jobs/<%= job.id %>/permits">
+      <div class="grid2"><label class="field">Permit number<input name="permit_no" required></label><label class="field">Fee you paid<input name="fee" inputmode="decimal" placeholder="$" required></label></div>
+      <label class="field">What it covers<input name="description" placeholder="Residential alteration (building, plumbing, electrical)" required></label>
+      <div><button class="primary">Record permit</button></div>
+    </form></details>
+  <% } %>
+</section>
+<% } %>
+
+<% if (['homeowner', 'contractor'].includes(role) && live && !dispute) { %>
+<section class="stack"><h2>Report a problem</h2>
+  <details class="sub"><summary class="btn danger">Something's wrong</summary>
+    <form class="subform" method="post" action="/jobs/<%= job.id %>/dispute">
+      <label class="field">Which step?<select name="milestone_id"><option value="">The whole job (holds all payments)</option>
+        <% milestones.filter((m) => !['paid', 'refunded'].includes(m.status)).forEach((m) => { %><option value="<%= m.id %>"><%= m.name %> (holds only this step)</option><% }) %></select></label>
+      <label class="field">What's wrong?<textarea name="reason" required></textarea></label>
+      <div><button class="danger">Report and put the money on hold</button></div>
+      <p class="small muted">Our staff send an independent inspector to look at the work and report to both sides. If you still disagree, it goes to mediation.</p>
+    </form></details>
+</section>
+<% } %>
+
+<section class="stack"><h2>Activity</h2>
+  <div class="card"><ol class="timeline">
+    <% activity.forEach((a) => { %><li><span class="muted small"><%= a.at %> UTC</span><span><b><%= a.who %>:</b> <%= a.text %></span></li><% }) %>
+  </ol></div>
+</section>
+<%- include('partials/foot') %>

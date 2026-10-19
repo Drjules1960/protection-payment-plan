@@ -1,0 +1,6 @@
+<div class="card tablewrap" style="padding:.4rem .6rem"><table>
+  <thead><tr><th>#</th><th>Payment step</th><th>Checked by</th><th class="num">Amount</th></tr></thead>
+  <tbody><% milestones.forEach((m, i) => { %>
+    <tr><td><%= i + 1 %></td><td><%= m.name %></td><td><%= m.proof === 'permit' ? 'Permit office inspection' : 'Independent inspector' %></td><td class="num money"><%= usd(m.amount_cents) %></td></tr>
+  <% }) %></tbody>
+</table></div>

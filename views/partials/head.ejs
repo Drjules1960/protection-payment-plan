@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= typeof title !== 'undefined' ? title + ' · ' : '' %>Protection Payment Plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="/style.css">
+<link rel="icon" href="/favicon.svg">
+</head>
+<body>
+<% if (paymentMode !== 'live') { %>
+<div class="modebar"><%= paymentMode === 'simulated' ? 'Practice mode: payments are simulated and no real money moves.' : 'Stripe test mode: use Stripe test cards, no real money moves.' %></div>
+<% } %>
+<header class="topbar"><div class="topbar-in">
+  <a class="brand" href="/">
+    <svg viewBox="0 0 32 32" aria-hidden="true"><rect x="3" y="12" width="26" height="17" rx="3" fill="var(--accent)"/><path d="M8 12V9a8 8 0 0 1 16 0v3" fill="none" stroke="var(--brass)" stroke-width="3"/><path d="M11 21l3.5 3.5L22 17" fill="none" stroke="var(--accent-ink)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span><%= appName %></span>
+  </a>
+  <nav class="nav">
+    <% if (user) { %>
+      <a href="/dashboard"><%= user.role === 'inspector' ? 'My inspections' : user.role === 'staff' ? 'Review desk' : 'My jobs' %></a>
+      <% if (user.role === 'contractor') { %><a href="/payouts">Payouts</a><% } %>
+      <% if (user.role === 'staff') { %><a href="/staff/team">Team</a><a href="/staff/ledger">Money in and out</a><% } %>
+      <span class="who"><%= user.name %></span>
+      <form class="inline" method="post" action="/logout"><button class="linkbtn">Log out</button></form>
+    <% } else { %>
+      <a href="/login">Log in</a><a class="btn primary" href="/signup">Contractor sign-up</a>
+    <% } %>
+  </nav>
+</div></header>
+<main<%- typeof narrow !== 'undefined' && narrow ? ' class="narrow"' : '' %>>
+<% if (flash) { %><div class="banner <%= flash.kind %>"><div><%= flash.text %></div></div><% } %>

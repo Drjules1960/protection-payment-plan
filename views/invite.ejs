@@ -1,0 +1,26 @@
+<%- include('partials/head', { title: 'Your invite' }) %>
+<div class="pagehead"><div>
+  <span class="label">Invite from <%= contractor.company || contractor.name %></span>
+  <h1>Protect your <%= job.title.toLowerCase() %></h1>
+  <p class="muted"><%= job.address %></p>
+</div></div>
+<div class="card stack">
+  <p><%= contractor.company || contractor.name %> (NC license <%= contractor.license_no %>) is offering this job through the Protection Payment Plan. You deposit the full price once. Stripe, a licensed payment company, holds it, and each step is paid to the contractor only after an independent inspector or the permit office confirms it's done.</p>
+</div>
+<h2>Payment steps</h2>
+<%- include('partials/steps-table', { milestones }) %>
+<div class="card stack"><h2>What you'd deposit</h2><%- include('partials/deposit-summary', { job, totals }) %></div>
+<% if (!job.homeowner_id) { %>
+<form class="card stack" method="post" action="/invite/<%= job.invite_token %>">
+  <h2>Create your account to review and accept</h2>
+  <% if (typeof error !== 'undefined') { %><div class="banner bad"><div><%= error %></div></div><% } %>
+  <label class="field">Your name<input name="name" value="<%= form.name %>" required></label>
+  <label class="field">Email<input type="email" name="email" value="<%= form.email %>" required autocomplete="email"></label>
+  <label class="field">Password (8 or more characters)<input type="password" name="password" minlength="8" required autocomplete="new-password"></label>
+  <button class="primary">Create account</button>
+  <p class="small muted">Already have an account? <a href="/login?next=<%= encodeURIComponent('/invite/' + job.invite_token) %>">Log in</a>, then come back to this link.</p>
+</form>
+<% } else { %>
+<div class="card"><p>This offer already has a homeowner account. <a href="/login">Log in</a> to see it.</p></div>
+<% } %>
+<%- include('partials/foot') %>

@@ -1,0 +1,10 @@
+<%- include('partials/head', { narrow: true, title: 'Practice payment' }) %>
+<form class="card stack" method="post" action="/simulate/checkout/<%= payment.id %>">
+  <span class="label">Practice checkout</span>
+  <h1><%= usd(payment.amount_cents) %></h1>
+  <p><%= payment.kind === 'deposit' ? 'Deposit for' : 'Permit fund top-up for' %> <%= job.title %>.</p>
+  <p class="small muted">With Stripe connected, this is Stripe's own secure payment page, where the homeowner pays by bank transfer, debit card or Cash App Pay. In practice mode nothing is charged.</p>
+  <button class="primary">Pay <%= usd(payment.amount_cents) %> (practice)</button>
+  <a href="/jobs/<%= job.id %>">Cancel</a>
+</form>
+<%- include('partials/foot') %>

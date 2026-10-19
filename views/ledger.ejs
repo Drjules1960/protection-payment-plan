@@ -1,0 +1,13 @@
+<%- include('partials/head', { title: 'Money in and out' }) %>
+<div class="pagehead"><div><span class="label">Review desk</span><h1>Money in and out</h1></div></div>
+<p class="small muted">Every payment, payout, refund and fee, with its Stripe reference. Stripe holds the money; this is the record of whose money it is.</p>
+<div class="card tablewrap" style="padding:.4rem .6rem"><table>
+  <thead><tr><th>When (UTC)</th><th>Project</th><th>Entry</th><th>Party</th><th class="num">Amount</th><th>Reference</th></tr></thead>
+  <tbody>
+  <% if (!rows.length) { %><tr><td colspan="6" class="muted">Nothing yet.</td></tr><% } %>
+  <% rows.forEach((r) => { %>
+    <tr><td><%= r.at %></td><td><a href="/jobs/<%= r.job_id %>"><%= r.job_title %></a></td><td><%= r.kind %></td><td><%= r.party %></td>
+      <td class="num money"><%= r.direction === 'out' ? '−' : '+' %><%= usd(r.amount_cents) %></td><td class="money small"><%= r.reference || '' %></td></tr>
+  <% }) %>
+  </tbody></table></div>
+<%- include('partials/foot') %>

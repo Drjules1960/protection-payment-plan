@@ -1,0 +1,65 @@
+<%- include('partials/head', { title: 'Dashboard' }) %>
+<% const sum = (k) => cards.reduce((a, c) => a + c.totals[k], 0); %>
+<% if (user.role === 'contractor') { %>
+  <div class="pagehead"><div><span class="label"><%= user.company %></span><h1>Your jobs</h1></div>
+    <a class="btn primary" href="/jobs/new">Offer the plan on a new job</a></div>
+  <% if (!user.payouts_ready) { %><div class="banner warn"><div><b>Set up payouts to get paid.</b><span class="small">Add your bank account through Stripe so passed steps can be paid to you.</span></div><a class="btn" href="/payouts">Set up payouts</a></div><% } %>
+  <div class="stats">
+    <div class="stat held"><span class="label">Secured and waiting for you</span><span class="money"><%= usd(sum('held')) %></span><span class="small muted">Homeowners already deposited this</span></div>
+    <div class="stat"><span class="label">Paid to you so far</span><span class="money"><%= usd(sum('paid')) %></span><span class="small muted">Before service fees</span></div>
+  </div>
+<% } else if (user.role === 'homeowner') { %>
+  <div class="pagehead"><div><span class="label">Welcome, <%= user.name %></span><h1>Your projects</h1></div></div>
+  <div class="stats">
+    <div class="stat held"><span class="label">Your money secured</span><span class="money"><%= usd(sum('held')) %></span><span class="small muted">Released only when work passes its check</span></div>
+    <div class="stat"><span class="label">Paid to contractors</span><span class="money"><%= usd(sum('paid')) %></span></div>
+  </div>
+<% } else if (user.role === 'inspector') { %>
+  <div class="pagehead"><div><span class="label"><%= user.company || 'Independent inspector' %></span><h1>Your inspections</h1></div></div>
+  <p class="small muted">You're paid by the Protection Plan, never by the homeowner or contractor.</p>
+  <% const todo = inspections.filter((m) => m.status === 'inspection'); %>
+  <section class="stack"><h2>Scheduled</h2>
+  <% if (!todo.length) { %><div class="card muted">No inspections scheduled.</div><% } %>
+  <% todo.forEach((m) => { %>
+    <div class="card stack"><div class="row between"><div><h3><%= m.name %></h3><span class="small muted"><%= m.job_title %> · <%= m.address %></span></div><span class="pill info">Visit <%= m.inspection_date %></span></div>
+    <div><a class="btn primary" href="/jobs/<%= m.job_id %>#step-<%= m.id %>">Open and record the result</a></div></div>
+  <% }) %></section>
+  <% const done = inspections.filter((m) => m.status !== 'inspection'); if (done.length) { %>
+  <section class="stack"><h2>Completed</h2><div class="card tablewrap" style="padding:.4rem .6rem"><table><thead><tr><th>Project</th><th>Step</th><th>Result</th></tr></thead><tbody>
+    <% done.forEach((m) => { %><tr><td><%= m.job_title %></td><td><%= m.name %></td><td><%= ['paid','approved'].includes(m.status) ? 'Passed' : m.status === 'changes' ? 'Did not pass' : m.status %></td></tr><% }) %>
+  </tbody></table></div></section>
+  <% } %>
+<% } else { %>
+  <div class="pagehead"><div><span class="label">Review desk</span><h1>Project funds</h1></div></div>
+  <div class="stats">
+    <div class="stat held"><span class="label">Total secured funds</span><span class="money"><%= usd(sum('held')) %></span></div>
+    <div class="stat"><span class="label">Steps waiting</span><span class="money"><%= queue.length %></span></div>
+    <div class="stat"><span class="label">Open disputes</span><span class="money"><%= disputes.length %></span></div>
+  </div>
+  <section class="stack"><h2>Draw requests</h2>
+    <p class="small muted">Staff can't approve a payment on their own. Each step is paid only when an independent inspector or the permit office passes it.</p>
+    <% if (!queue.length) { %><div class="card muted">No draw requests right now.</div><% } %>
+    <% queue.forEach((m) => { %>
+      <div class="card row between"><div><h3><%= m.name %></h3><span class="small muted"><%= m.job_title %> · <%= m.address %></span></div>
+        <div class="row"><span class="money"><%= usd(m.amount_cents) %></span>
+        <span class="pill <%= m.status === 'approved' ? 'warn' : 'info' %>"><%= m.status === 'submitted' ? (m.proof === 'permit' ? 'Check permit record' : 'Assign an inspector') : m.status === 'inspection' ? 'Inspection ' + m.inspection_date : 'Passed, payout waiting' %></span>
+        <a class="btn" href="/jobs/<%= m.job_id %>#step-<%= m.id %>">Open</a></div></div>
+    <% }) %>
+  </section>
+  <% if (disputes.length) { %><section class="stack"><h2>Open disputes</h2>
+    <% disputes.forEach((d) => { %><div class="card row between" style="border-color:var(--bad)"><div><h3><%= d.job_title %></h3><span class="small">"<%= d.reason %>"</span></div><a class="btn" href="/jobs/<%= d.job_id %>">Open</a></div><% }) %>
+  </section><% } %>
+<% } %>
+<% if (user.role !== 'inspector') { %>
+<section class="stack"><% if (user.role === 'staff') { %><h2>All projects</h2><% } %>
+  <% if (!cards.length) { %><div class="card muted"><%= user.role === 'contractor' ? 'No jobs yet. Offer the plan on your first job.' : 'No projects yet.' %></div><% } %>
+  <% cards.forEach(({ job, totals, contractor }) => { %>
+    <a class="card jobcard" href="/jobs/<%= job.id %>">
+      <div class="row between"><div><h3><%= job.title %></h3><span class="small muted"><%= job.address %></span></div><%- include('partials/status', { status: job.status }) %></div>
+      <div class="row small"><span class="muted"><%= user.role === 'contractor' ? 'Homeowner: ' + job.homeowner_name : 'Contractor: ' + (contractor.company || contractor.name) %></span><span class="money" style="margin-left:auto"><%= usd(totals.total) %></span></div>
+      <%- include('partials/moneybar', { t: totals }) %>
+    </a>
+  <% }) %>
+</section>
+<% } %>
+<%- include('partials/foot') %>

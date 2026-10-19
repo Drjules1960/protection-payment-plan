@@ -1,0 +1,26 @@
+{
+  "name": "protection-payment-plan",
+  "version": "0.1.0",
+  "description": "North Carolina Contractors and Homeowners Protection Payment Plan: homeowners deposit the full job price, contractors are paid as each step passes an independent or permit inspection.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "seed": "node --disable-warning=ExperimentalWarning scripts/seed.js",
+    "test": "node --disable-warning=ExperimentalWarning --test test/*.test.js"
+  },
+  "license": "UNLICENSED",
+  "dependencies": {
+    "cookie-session": "^2.1.0",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "stripe": "^18.5.0"
+  },
+  "devDependencies": {
+    "supertest": "^7.1.4"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22.13"
+  }
+}

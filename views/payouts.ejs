@@ -1,0 +1,13 @@
+<%- include('partials/head', { narrow: true, title: 'Payouts' }) %>
+<div class="card stack">
+  <h1>Payouts</h1>
+  <% if (user.payouts_ready) { %>
+    <div class="banner ok"><div><b>Payouts are set up.</b><span class="small">Passed steps are sent straight to the bank account you gave Stripe.</span></div></div>
+    <form method="post" action="/payouts/setup"><button>Update bank details with Stripe</button></form>
+  <% } else { %>
+    <p>To get paid, add your business and bank details with Stripe, the licensed payment company that holds and sends the money. It takes a few minutes. We never see your bank login.</p>
+    <form method="post" action="/payouts/setup"><button class="primary"><%= user.stripe_account_id ? 'Finish payout setup' : 'Set up payouts with Stripe' %></button></form>
+  <% } %>
+  <p class="small muted">License <%= user.license_no %>: <%= user.license_verified ? 'verified by our staff' : 'waiting for our staff to verify with the NC Licensing Board' %>.</p>
+</div>
+<%- include('partials/foot') %>

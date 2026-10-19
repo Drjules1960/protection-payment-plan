@@ -1,0 +1,25 @@
+<%- include('partials/head', { title: 'Team' }) %>
+<div class="pagehead"><div><span class="label">Review desk</span><h1>Inspectors and contractors</h1></div></div>
+<% if (typeof error !== 'undefined') { %><div class="banner bad"><div><%= error %></div></div><% } %>
+<% if (created) { %><div class="banner ok"><div><b>Inspector account created for <%= created.name %>.</b>
+  <span class="small">Send them the login: <%= created.email %>, temporary password <span class="money"><%= created.tempPassword %></span>. It's shown only once.</span></div></div><% } %>
+<section class="stack"><h2>Independent inspectors</h2>
+  <div class="card tablewrap" style="padding:.4rem .6rem"><table><thead><tr><th>Name</th><th>Company</th><th>Email</th></tr></thead><tbody>
+  <% if (!inspectors.length) { %><tr><td colspan="3" class="muted">No inspectors yet.</td></tr><% } %>
+  <% inspectors.forEach((i) => { %><tr><td><%= i.name %></td><td><%= i.company || '' %></td><td><%= i.email %></td></tr><% }) %>
+  </tbody></table></div>
+  <form class="card stack" method="post" action="/staff/inspectors"><h3>Add an inspector</h3>
+    <div class="grid2"><label class="field">Name<input name="name" required></label><label class="field">Company<input name="company"></label><label class="field">Email<input type="email" name="email" required></label></div>
+    <div><button class="primary">Create inspector login</button></div></form>
+</section>
+<section class="stack"><h2>Contractors</h2>
+  <p class="small muted">Look up each license with the NC Licensing Board for General Contractors, then mark it verified.</p>
+  <div class="card tablewrap" style="padding:.4rem .6rem"><table><thead><tr><th>Company</th><th>Contact</th><th>License</th><th>Payouts</th><th></th></tr></thead><tbody>
+  <% if (!contractors.length) { %><tr><td colspan="5" class="muted">No contractors yet.</td></tr><% } %>
+  <% contractors.forEach((c) => { %><tr><td><%= c.company %></td><td><%= c.name %> · <%= c.email %></td><td><%= c.license_no %></td>
+    <td><%= c.payouts_ready ? 'Ready' : 'Not set up' %></td>
+    <td><form method="post" action="/staff/contractors/<%= c.id %>/verify"><input type="hidden" name="verified" value="<%= c.license_verified ? 0 : 1 %>">
+      <button class="<%= c.license_verified ? '' : 'primary' %>"><%= c.license_verified ? 'Verified ✓ (undo)' : 'Mark license verified' %></button></form></td></tr><% }) %>
+  </tbody></table></div>
+</section>
+<%- include('partials/foot') %>

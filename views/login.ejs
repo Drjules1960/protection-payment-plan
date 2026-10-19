@@ -1,0 +1,11 @@
+<%- include('partials/head', { narrow: true, title: 'Log in' }) %>
+<form class="card stack" method="post" action="/login">
+  <h1>Log in</h1>
+  <% if (typeof error !== 'undefined') { %><div class="banner bad"><div><%= error %></div></div><% } %>
+  <input type="hidden" name="next" value="<%= next %>">
+  <label class="field">Email<input type="email" name="email" value="<%= email %>" required autocomplete="email"></label>
+  <label class="field">Password<input type="password" name="password" required autocomplete="current-password"></label>
+  <button class="primary">Log in</button>
+  <p class="small muted">Homeowners: open the invite link from your contractor to create your account.</p>
+</form>
+<%- include('partials/foot') %>
